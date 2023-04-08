@@ -36,6 +36,9 @@ export class Hero {
   public attackRange: number;
   public attackRate: number;
   public moveSpeed: number;
+  public hoverFirst: number;
+  public hoverSecond: number;
+  public hoverThird: number;
 
   constructor(data: HeroDTO) {
     this.id = data.id;
@@ -55,5 +58,8 @@ export class Hero {
     this.attackRange = data.attack_range;
     this.attackRate = data.attack_rate;
     this.moveSpeed = data.move_speed;
+    this.hoverFirst = data.base_str;
+    this.hoverSecond = data.base_agi;
+    this.hoverThird = data.base_int;
   }
 }
