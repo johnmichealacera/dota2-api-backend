@@ -15,7 +15,9 @@ client.on('error', (err: any) => {
 client.connect();
 
 export const setRedis = async (key: string, data: any) => {
-  client.set(key, JSON.stringify(data));
+  client.set(key, JSON.stringify(data), {
+    EX: 86400,
+  });
 }
 
 export const getRedis = async (key: string) => {
