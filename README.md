@@ -24,8 +24,6 @@ The application requires the following environment variables to be set:
 
 Create a `.env` file in the root directory of the project with the following values:
 
-`env`
-
 `PORT=3000`
 
 `DOTA_SITE=http://localhost:8080`
