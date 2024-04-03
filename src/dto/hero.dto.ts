@@ -18,6 +18,7 @@ export interface HeroDTO {
   move_speed: number;
 }
 
+import { HERO_URL_BASE } from "../constants/constants.json";
 export class Hero {
   public id: number;
   public name: string;
@@ -46,8 +47,8 @@ export class Hero {
     this.primaryAttr = data.primary_attr;
     this.attackType = data.attack_type;
     this.roles = data.roles;
-    this.img = `https://api.opendota.com${data.img}`;
-    this.icon = `https://api.opendota.com${data.icon}`;
+    this.img = `${HERO_URL_BASE}/${data.img.substring(data.img.lastIndexOf('/') + 1)}`;
+    this.icon = `${HERO_URL_BASE}/${data.img.substring(data.img.lastIndexOf('/') + 1)}`
     this.health = data.base_health;
     this.baseStr = data.base_str;
     this.baseAgi = data.base_agi;

@@ -1,5 +1,5 @@
 export interface Pagination {
-  totalHeroes: number,
+  totalItems: number,
   currentPage: number,
   pageSize: number,
   totalPages: number

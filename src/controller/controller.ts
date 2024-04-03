@@ -4,7 +4,7 @@ import { Hero } from '../dto/hero.dto';
 import { getRedis, setRedis } from "../cache/redis";
 import { Team } from "../dto/team.dto";
 import { HERO_URL_BASE } from "../constants/constants.json";
-import { HeroPaginated } from "../dto/hero-paginated.dto";
+import { ItemsPaginated } from "../dto/item-paginated.dto";
 
 const logAndReturnError = (error: any, res: Response) => {
   if (error.response) {
@@ -20,18 +20,14 @@ const logAndReturnError = (error: any, res: Response) => {
   }
 }
 
-const paginateHeroes = (page: number, pageSize: number, rawData: Hero[]): HeroPaginated => {
+const paginateItems = (page: number, pageSize: number, rawData: Hero[]): ItemsPaginated => {
     const startIndex = (page - 1) * pageSize;
     const endIndex = startIndex + pageSize;
-    const paginatedHeroes = rawData.slice(startIndex, endIndex);
-    const updateHeroImage = paginatedHeroes?.map((hero: any) => ({
-      ...hero,
-      img: `${HERO_URL_BASE}/${hero.img.substring(hero.img.lastIndexOf('/') + 1)}`
-    }))
+    const paginatedItems = rawData.slice(startIndex, endIndex);
     const sliceData = {
-      heroes: updateHeroImage,
+      items: paginatedItems,
       pagination: {
-          totalHeroes: rawData.length,
+          totalItems: rawData.length,
           currentPage: page,
           pageSize: pageSize,
           totalPages: Math.ceil(rawData.length / pageSize)
@@ -40,13 +36,13 @@ const paginateHeroes = (page: number, pageSize: number, rawData: Hero[]): HeroPa
   return sliceData
 }
 
-export const getDotaHeroes = async (req: Request, res: Response, next: NextFunction): Promise<Response<HeroPaginated> | Response<{ error: string }>> => {
+export const getDotaHeroes = async (req: Request, res: Response, next: NextFunction): Promise<Response<ItemsPaginated> | Response<{ error: string }>> => {
   try {
     const page: number = parseInt(req?.query?.page as string, 10) || 1;
     const pageSize: number = parseInt(req?.query?.pageSize as string, 10) || 10;
     const redisData = await getRedis('dotaHeroes');
     if (redisData) {
-      const paginatedHeroes = paginateHeroes(page, pageSize, redisData);
+      const paginatedHeroes = paginateItems(page, pageSize, redisData);
       return res.status(200).json(paginatedHeroes);
     }
     const openDotaApiUrl: any = process.env.OPEN_DOTA_API_URL;
@@ -55,7 +51,7 @@ export const getDotaHeroes = async (req: Request, res: Response, next: NextFunct
       return new Hero(hero);
     });
     await setRedis('dotaHeroes', heroes);
-    const paginatedHeroes = paginateHeroes(page, pageSize, heroes);
+    const paginatedHeroes = paginateItems(page, pageSize, heroes);
 
     return res.status(200).json(paginatedHeroes);
   } catch (error: any) {
@@ -133,11 +129,14 @@ export const getProplayers = async (req: Request, res: Response, next: NextFunct
   }
 }
 
-export const getProTeams = async (req: Request, res: Response, next: NextFunction) => {
+export const getProTeams = async (req: Request, res: Response, next: NextFunction): Promise<Response<ItemsPaginated> | Response<{ error: string }>> => {
   try {
+    const page: number = parseInt(req?.query?.page as string, 10) || 1;
+    const pageSize: number = parseInt(req?.query?.pageSize as string, 10) || 10;
     const redisData = await getRedis('proTeams');
     if (redisData) {
-      return res.status(200).json(redisData);
+      const paginatedHeroes = paginateItems(page, pageSize, redisData);
+      return res.status(200).json(paginatedHeroes);
     }
     const openDotaApiUrl: any = process.env.OPEN_DOTA_API_URL;
     const { data } = await axios.get(`${openDotaApiUrl}/teams`);
@@ -148,11 +147,12 @@ export const getProTeams = async (req: Request, res: Response, next: NextFunctio
       hoverThird: item?.losses,
       id: item?.team_id,
       img: item?.logo_url,
-    }))
+    }));
     await setRedis('proTeams', teamData)
-    return res.status(200).json(teamData);
+    const paginatedTeams = paginateItems(page, pageSize, teamData);
+    return res.status(200).json(paginatedTeams);
   } catch (error: any) {
-    logAndReturnError(error, res);
+    return logAndReturnError(error, res);
   }
 }
 
