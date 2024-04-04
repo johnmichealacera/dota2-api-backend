@@ -82,11 +82,13 @@ export const getHeroInfoById = async (req: Request, res: Response, next: NextFun
 
 export const getHeroMatchupById = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { params }: any = req;
-    const id = parseInt(params?.id, 10);
+    const id = parseInt(req?.params?.id, 10);
+    const page: number = parseInt(req?.query?.page as string, 10) || 1;
+    const pageSize: number = parseInt(req?.query?.pageSize as string, 10) || 10;
     const redisData = await getRedis(`dotaHeroMatchup-${id}`);
     if (redisData) {
-      return res.status(200).json(redisData);
+      const paginatedHeroMatchups = paginateItems(page, pageSize, redisData);
+      return res.status(200).json(paginatedHeroMatchups);
     }
     const openDotaApiUrl: any = process.env.OPEN_DOTA_API_URL;
     const dotaHeroMatchupsRaw = await axios.get(`${openDotaApiUrl}/heroes/${id}/matchups`);
@@ -105,8 +107,8 @@ export const getHeroMatchupById = async (req: Request, res: Response, next: Next
       }
     )).sort((a: any, b: any) => b.winRate - a.winRate);
     await setRedis(`dotaHeroMatchup-${id}`, dotaHeroMatchups)
-
-    return res.status(200).json(dotaHeroMatchups);
+    const paginatedHeroMatchups = paginateItems(page, pageSize, dotaHeroMatchups);
+    return res.status(200).json(paginatedHeroMatchups);
   } catch (error: any) {
     logAndReturnError(error, res);
   }
@@ -187,17 +189,20 @@ const groupBy = (objectArray: any, property: any) => {
 
 export const getTeamMatchupByTeamId = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { params }: any = req;
-    const id = parseInt(params?.id, 10);
+    const page: number = parseInt(req?.query?.page as string, 10) || 1;
+    const pageSize: number = parseInt(req?.query?.pageSize as string, 10) || 10;
+    const id = parseInt(req.params?.id, 10);
     const redisData = await getRedis(`dotaTeamMatchup-${id}`);
     if (redisData) {
-      return res.status(200).json(redisData);
+      const paginatedTeamMatchups = paginateItems(page, pageSize, redisData);
+      return res.status(200).json(paginatedTeamMatchups);
     }
     const openDotaApiUrl: any = process.env.OPEN_DOTA_API_URL;
     const { data } = await axios.get(`${openDotaApiUrl}/teams/${id}/matches`);
-    const teamMatchup = Object.values(groupBy(data, 'opposing_team_id'));
+    const teamMatchup: any = Object.values(groupBy(data, 'opposing_team_id'));
     await setRedis(`dotaTeamMatchup-${id}`, teamMatchup);
-    return res.status(200).json(teamMatchup);
+    const paginatedTeamMatchups = paginateItems(page, pageSize, teamMatchup);
+    return res.status(200).json(paginatedTeamMatchups);
   } catch (error: any) {
     logAndReturnError(error, res);
   }
