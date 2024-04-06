@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import axios from "axios";
-import { Hero } from '../dto/hero.dto';
+import { Hero, HeroDTO } from '../dto/hero.dto';
 import { getRedis, setRedis } from "../cache/redis";
 import { Team } from "../dto/team.dto";
 import { HERO_URL_BASE } from "../constants/constants.json";
@@ -45,9 +45,8 @@ export const getDotaHeroes = async (req: Request, res: Response, next: NextFunct
       const paginatedHeroes = paginateItems(page, pageSize, redisData);
       return res.status(200).json(paginatedHeroes);
     }
-    const openDotaApiUrl: any = process.env.OPEN_DOTA_API_URL;
-    const { data } = await axios.get(`${openDotaApiUrl}/constants/heroes`);
-    const heroes = Object.values(data).map((hero: any) => {
+    const rawHeroes = await fetchDotaHeroes();
+    const heroes = Object.values(rawHeroes).map((hero: HeroDTO) => {
       return new Hero(hero);
     });
     await setRedis('dotaHeroes', heroes);
@@ -67,9 +66,8 @@ export const getHeroInfoById = async (req: Request, res: Response, next: NextFun
     if (redisData) {
       return res.status(200).json(redisData);
     }
-    const openDotaApiUrl: any = process.env.OPEN_DOTA_API_URL;
-    const { data } = await axios.get(`${openDotaApiUrl}/constants/heroes`);
-    const hero: any = Object.values(data).find((hero: any) => {
+    const rawHeroes = await fetchDotaHeroes();
+    const hero: any = Object.values(rawHeroes).find((hero: any) => {
       return hero?.id === id;
     });
     await setRedis(`dotaInfoHero-${id}`, new Hero(hero));
@@ -92,7 +90,7 @@ export const getHeroMatchupById = async (req: Request, res: Response, next: Next
     }
     const openDotaApiUrl: any = process.env.OPEN_DOTA_API_URL;
     const dotaHeroMatchupsRaw = await axios.get(`${openDotaApiUrl}/heroes/${id}/matchups`);
-    const { data } = await axios.get(`${openDotaApiUrl}/constants/heroes`);
+    const data = await fetchDotaHeroes();
     const heroes = Object.values(data).map((hero: any) => {
       return new Hero(hero);
     });
@@ -141,7 +139,7 @@ export const getProTeams = async (req: Request, res: Response, next: NextFunctio
       return res.status(200).json(paginatedHeroes);
     }
     const openDotaApiUrl: any = process.env.OPEN_DOTA_API_URL;
-    const { data } = await axios.get(`${openDotaApiUrl}/teams`);
+    const data = await fetchDotaTeams();
     const teamData = data?.map((item: any) => ({
       ...item,
       hoverFirst: item?.rating,
@@ -150,7 +148,7 @@ export const getProTeams = async (req: Request, res: Response, next: NextFunctio
       id: item?.team_id,
       img: item?.logo_url,
     }));
-    await setRedis('proTeams', teamData)
+    await setRedis('proTeams', teamData);
     const paginatedTeams = paginateItems(page, pageSize, teamData);
     return res.status(200).json(paginatedTeams);
   } catch (error: any) {
@@ -225,13 +223,13 @@ export const getTeamInfoByTeamId = async (req: Request, res: Response, next: Nex
   }
 }
 
-export const fetchDotaHeroes = async () => {
+export const fetchDotaHeroes = async (): Promise<HeroDTO[]> => {
   const redisData = await getRedis('rawDotaHeroes');
     if (redisData) {
       redisData;
     }
   const { data } = await axios.get(`${process.env.OPEN_DOTA_API_URL}/constants/heroes`);
-  const heroes = Object.values(data).map((hero) => {
+  const heroes: any = Object.values(data).map((hero) => {
     return hero;
   });
   await setRedis('rawDotaHeroes', heroes);
