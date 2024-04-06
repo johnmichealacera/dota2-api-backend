@@ -224,3 +224,26 @@ export const getTeamInfoByTeamId = async (req: Request, res: Response, next: Nex
     logAndReturnError(error, res);
   }
 }
+
+export const fetchDotaHeroes = async () => {
+  const redisData = await getRedis('rawDotaHeroes');
+    if (redisData) {
+      redisData;
+    }
+  const { data } = await axios.get(`${process.env.OPEN_DOTA_API_URL}/constants/heroes`);
+  const heroes = Object.values(data).map((hero) => {
+    return hero;
+  });
+  await setRedis('rawDotaHeroes', heroes);
+  return heroes;
+}
+
+export const fetchDotaTeams = async () => {
+  const redisData = await getRedis('rawProTeams');
+    if (redisData) {
+      redisData;
+    }
+  const { data } = await axios.get(`${process.env.OPEN_DOTA_API_URL}/teams`);
+  await setRedis('rawProTeams', data)
+  return data;
+}

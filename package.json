@@ -1,7 +1,7 @@
 {
   "name": "dota-express",
   "version": "1.0.0",
-  "description": "",
+  "description": "This is a dota api Node.js backend project built with Express.js and TypeScript.",
   "main": "src/index.js",
   "scripts": {
     "start": "node dist/index.js",
@@ -15,10 +15,12 @@
   "author": "John Micheal Acera",
   "license": "MIT",
   "dependencies": {
+    "@apollo/server": "^4.10.2",
     "axios": "^1.3.4",
     "cors": "^2.8.5",
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
+    "graphql": "^16.8.1",
     "redis": "^4.6.5"
   },
   "devDependencies": {
